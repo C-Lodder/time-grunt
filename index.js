@@ -1,5 +1,4 @@
-//const chalk = require('chalk');
-const { magenta, yellow, green, underline, bold } = require('kleur');
+const kleur = require('kleur');
 const table = require('text-table');
 const hooker = require('hooker');
 const dateTime = require('date-time');
@@ -19,6 +18,7 @@ module.exports = (grunt, cb) => {
 	const startTime = now.getTime();
 	let prevTime = startTime;
 	let prevTaskName = 'loading tasks';
+	let colour = true;
 	const tableData = [];
 
 	if (argv.includes('--help') ||
@@ -28,6 +28,10 @@ module.exports = (grunt, cb) => {
 		argv.includes('--version') ||
 		argv.includes('-V')) {
 		return;
+	}
+
+	if (argv.includes('--no-color')) {
+		colour = false;
 	}
 
 	// Crazy hack to work around stupid node-exit
@@ -120,7 +124,10 @@ module.exports = (grunt, cb) => {
 				return null;
 			}
 
-			return [shorten(row[0]), yellow(prettyMs(row[1])), yellow(createBar(avg))];
+			const msStr = colour ? kleur.yellow(prettyMs(row[1])) : prettyMs(row[1]);
+			const barStr = colour ? kleur.yellow(createBar(avg)) : createBar(avg);
+
+			return [shorten(row[0]), msStr, barStr];
 		}).reduce((acc, row) => {
 			if (row) {
 				acc.push(row);
@@ -130,7 +137,8 @@ module.exports = (grunt, cb) => {
 			return acc;
 		}, []);
 
-		tableDataProcessed.push([bold().green(`Total ${prettyMs(totalTime)}`)]);
+		const totalTimeStr = colour ? kleur.bold().green(`Total ${prettyMs(totalTime)}`) : `Total ${prettyMs(totalTime)}`;
+		tableDataProcessed.push([totalTimeStr]);
 
 		return table(tableDataProcessed, {
 			align: ['l', 'r', 'l'],
@@ -157,7 +165,8 @@ module.exports = (grunt, cb) => {
 		}
 
 		// `grunt.log.header` should be unhooked above, but in some cases it's not
-		log(`\n\n${underline('Execution Time')}${magenta(` (${startTimePretty})`)}`);
+		const startStr = colour ? kleur.magenta(`(${startTimePretty})`) : startTimePretty;
+		log(`\n\nExecution Time ${startStr}`);
 		log(`${formatTable(tableData)}\n`);
 
 		if (cb) {
